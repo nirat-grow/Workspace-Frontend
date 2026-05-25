@@ -478,6 +478,7 @@ const ReportsPage = ({ activeProject }) => {
       [''],
       ['Hours Tracked', `${totalHours}h`],
       ['Completed Tasks', totalCompleted],
+      ['Free / Idle Members', daily.freeMembers?.length || 0],
       ['Pending Tasks', daily.pending?.length || 0],
       ['Overdue Tasks', overdue.length],
       ['Stuck Tasks', daily.stuck?.length || 0],
@@ -573,6 +574,18 @@ const ReportsPage = ({ activeProject }) => {
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Key', 'Title', 'Project', 'Assignee', 'Due Date', 'Days Overdue'], ...overdueRows], [14, 30, 18, 28, 16, 14], 1, 'FFFFFF', 'F59E0B', title), 'Overdue Tasks');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Key', 'Title', 'Project', 'Assignee', 'Blocker Reason', 'Last Updated'], ...stuckRows], [14, 30, 18, 28, 24, 16], 1, 'FFFFFF', 'EF4444', title), 'Stuck Tasks');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Key', 'Title', 'Project', 'Assignee', 'Hold Reason', 'Paused Date'], ...holdRows], [14, 30, 18, 28, 24, 16], 1, 'FFFFFF', '8B5CF6', title), 'On Hold Tasks');
+
+    // Add Free Members sheet (if daily.freeMembers exists)
+    if (daily.freeMembers && daily.freeMembers.length > 0) {
+      const freeHeader = ['Member Name', 'Role', 'Designation', 'Status'];
+      const freeRows = daily.freeMembers.map(m => [
+        m.name || '',
+        m.globalRole?.replace('_', ' ') || '',
+        m.designation || 'N/A',
+        'Available'
+      ]);
+      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([freeHeader, ...freeRows], [24, 18, 24, 14], 1, 'FFFFFF', '10B981', title), 'Free Members');
+    }
 
     // Add Team Performance sheet (if activeProject is selected and we have team members)
     if (projectTeam && projectTeam.length > 0) {
@@ -864,6 +877,60 @@ const ReportsPage = ({ activeProject }) => {
             </table>
           </div>
         </div>
+
+        {/* Free Team Members Table */}
+        {(daily.freeMembers?.length > 0) && (
+          <div className="report-table-section">
+            <div className="table-header">
+              <div className="header-left">
+                <div className="header-icon icon-green" style={{background: 'rgba(16,185,129,0.1)'}}>☕</div>
+                <h3 style={{ color: 'var(--status-done)' }}>Idle / Free Team Members</h3>
+              </div>
+              <span className="count-badge badge-green">{daily.freeMembers.length} Free</span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="responsive-table report-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Role</th>
+                    <th>Designation</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {daily.freeMembers.map(member => (
+                    <tr key={member.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/member-report/${member.id}`)}>
+                      <td data-label="Member">
+                        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                          {member.profilePic ? (
+                            <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${member.profilePic}`} alt={member.name} style={{width:'30px',height:'30px',borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(16,185,129,0.1)'}} />
+                          ) : (
+                            <div style={{width:'30px',height:'30px',borderRadius:'50%',background:'linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.08))',color:'var(--status-done)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.7rem',fontWeight:700}}>
+                              {member.name?.split(' ').map(n=>n[0]).join('').toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div className="cell-bold">{member.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td data-label="Role">
+                        <span className={`status-pill ${member.globalRole==='ADMIN'?'pill-red':member.globalRole==='TEAM_LEADER'?'pill-green':'pill-neutral'}`}>{member.globalRole?.replace('_',' ')}</span>
+                      </td>
+                      <td data-label="Designation" className="cell-muted">{member.designation || 'N/A'}</td>
+                      <td data-label="Status">
+                        <span className="status-pill pill-green" style={{background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.2)'}}>
+                          Available
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* 1. Overdue Tasks */}
         <div className="report-table-section">

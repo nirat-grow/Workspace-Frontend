@@ -33,6 +33,24 @@ const formatLoggedHours = (h) => {
   return p.join(' ');
 };
 
+const LiveTimer = ({ startTime }) => {
+  const [elapsed, setElapsed] = useState('');
+  useEffect(() => {
+    if (!startTime) { setElapsed('N/A'); return; }
+    const updateTimer = () => {
+      const diffMs = new Date() - new Date(startTime);
+      if (diffMs < 0) { setElapsed('0s'); return; }
+      const ds = Math.floor(diffMs / 1000), h = Math.floor(ds / 3600), m = Math.floor((ds % 3600) / 60), s = ds % 60;
+      let p = []; if (h > 0) p.push(`${h}h`); if (m > 0 || h > 0) p.push(`${m}m`); p.push(`${s}s`);
+      setElapsed(p.join(' '));
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+  return <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--accent)' }}>{elapsed}</span>;
+};
+
 // ─── Professional Excel Helpers ────────────────────────────────────────────
 
 const cellStyle = (overrides = {}) => ({
@@ -253,6 +271,8 @@ const GlobalReportPage = () => {
       ['Generated At', new Date()],
       [''],
       ['Total Projects', data.globalStats?.totalProjects || 0],
+      ['Free / Idle Members', data.freeMembers?.length || 0],
+      ['Current Running Tasks', data.globalStats?.totalProgress || 0],
       ['Completed Tasks', data.globalStats?.totalCompleted || 0],
       ['Hours Tracked', `${data.globalStats?.totalHours || 0}h`],
       ['Pending Tasks', data.globalStats?.totalPending || 0],
@@ -308,8 +328,41 @@ const GlobalReportPage = () => {
       formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
     ]);
 
+    const progressRows = (data.progressTasks || []).map(t => {
+      let workedTime = 'Paused';
+      if (t.status === 'PROGRESS' && t.startTime) {
+        const diffMs = new Date() - new Date(t.startTime);
+        const ds = Math.floor(diffMs / 1000), h = Math.floor(ds / 3600), m = Math.floor((ds % 3600) / 60), s = ds % 60;
+        let p = []; if (h > 0) p.push(`${h}h`); if (m > 0 || h > 0) p.push(`${m}m`); p.push(`${s}s`);
+        workedTime = p.join(' ');
+      }
+      return [
+        t.title || '',
+        t.project?.name || '',
+        t.assignee?.name || 'Unassigned',
+        t.startTime ? new Date(t.startTime) : '',
+        'Currently Running',
+        workedTime
+      ];
+    });
+
+    const freeRows = (data.freeMembers || []).map(m => [
+      m.name || '',
+      m.globalRole?.replace('_', ' ') || '',
+      m.designation || 'N/A',
+      'Available'
+    ]);
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Metric', 'Value'], ...summaryRows], [24, 24], 1, 'FFFFFF', '0052CC', reportTitle), 'Summary');
+    
+    if (freeRows.length > 0) {
+      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Member Name', 'Role', 'Designation', 'Status'], ...freeRows], [24, 18, 24, 14], 1, 'FFFFFF', '10B981', reportTitle), 'Free Members');
+    }
+
+    if (progressRows.length > 0) {
+      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Assignee', 'Start Time', 'Status', 'Worked Time'], ...progressRows], [26, 18, 20, 18, 14, 14], 1, 'FFFFFF', '6D28D9', reportTitle), 'Current Tasks');
+    }
     
     if (projectRows.length > 0) {
       XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Project', 'Members', 'Total Tasks', 'Completed', 'Pending', 'Overdue', 'Stuck', 'Hours', 'Completion'], ...projectRows], [26, 12, 12, 12, 12, 12, 12, 12, 14], 1, 'FFFFFF', '10B981', reportTitle), 'Project Breakdown');
@@ -414,6 +467,116 @@ const GlobalReportPage = () => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Current Running Tasks Table */}
+          {(data?.progressTasks?.length > 0) && (
+            <div className="report-tables-stack" style={{marginBottom:'2rem'}}>
+              <div className="report-table-section">
+                <div className="table-header">
+                  <div className="header-left">
+                    <div className="header-icon icon-indigo">⚡</div>
+                    <h3 style={{ color: 'var(--accent)' }}>Current Running Tasks</h3>
+                  </div>
+                  <span className="count-badge badge-indigo">{data.progressTasks.length} Active</span>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="responsive-table report-table">
+                    <thead>
+                      <tr>
+                        <th>Task</th>
+                        <th>Assignee</th>
+                        <th>Project</th>
+                        <th>Start Time</th>
+                        <th>Status</th>
+                        <th>Worked Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.progressTasks.map(task => (
+                        <tr key={task.id}>
+                          <td data-label="Task" className="cell-bold">
+                            <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{task.taskKey}</span>
+                            {task.title}
+                          </td>
+                          <td data-label="Assignee">
+                            <span className="status-pill pill-neutral">
+                              {task.assignee?.name || 'Unassigned'}
+                            </span>
+                          </td>
+                          <td data-label="Project" className="cell-muted">{task.project?.name || 'N/A'}</td>
+                          <td data-label="Start Time" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                            {task.startTime ? new Date(task.startTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
+                          </td>
+                          <td data-label="Status" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                            <span className="running-indicator"><span className="pulse-dot"></span> Running</span>
+                          </td>
+                          <td data-label="Worked Time">
+                            <LiveTimer startTime={task.startTime} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Free Team Members Table */}
+          {(data?.freeMembers?.length > 0) && (
+            <div className="report-tables-stack" style={{marginBottom:'2rem'}}>
+              <div className="report-table-section">
+                <div className="table-header">
+                  <div className="header-left">
+                    <div className="header-icon icon-green" style={{background: 'rgba(16,185,129,0.1)'}}>☕</div>
+                    <h3 style={{ color: 'var(--status-done)' }}>Idle / Free Team Members</h3>
+                  </div>
+                  <span className="count-badge badge-green">{data.freeMembers.length} Free</span>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="responsive-table report-table">
+                    <thead>
+                      <tr>
+                        <th>Member</th>
+                        <th>Role</th>
+                        <th>Designation</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.freeMembers.map(member => (
+                        <tr key={member.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/member-report/${member.id}`)}>
+                          <td data-label="Member">
+                            <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                              {member.profilePic ? (
+                                <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${member.profilePic}`} alt={member.name} style={{width:'30px',height:'30px',borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(16,185,129,0.1)'}} />
+                              ) : (
+                                <div style={{width:'30px',height:'30px',borderRadius:'50%',background:'linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.08))',color:'var(--status-done)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.7rem',fontWeight:700}}>
+                                  {member.name?.split(' ').map(n=>n[0]).join('').toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <div className="cell-bold">{member.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td data-label="Role">
+                            <span className={`status-pill ${member.globalRole==='ADMIN'?'pill-red':member.globalRole==='TEAM_LEADER'?'pill-green':'pill-neutral'}`}>{member.globalRole?.replace('_',' ')}</span>
+                          </td>
+                          <td data-label="Designation" className="cell-muted">{member.designation || 'N/A'}</td>
+                          <td data-label="Status">
+                            <span className="status-pill pill-green" style={{background: 'rgba(16,185,129,0.1)', color: '#059669', borderColor: 'rgba(16,185,129,0.2)'}}>
+                              Available
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

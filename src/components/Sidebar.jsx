@@ -529,6 +529,40 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                   whiteSpace: 'nowrap'
                 }}>Core Team</span>
               </Link>
+              <Link 
+                to="/global-report" 
+                onClick={handleNavClick}
+                style={{
+                  color: currentPath === '/global-report' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isOpen ? 'flex-start' : 'center',
+                  gap: isOpen ? '8px' : '0px',
+                  padding: isOpen ? '6px 10px 6px 16px' : '10px 0',
+                  borderRadius: '6px',
+                  background: currentPath === '/global-report' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+                  fontWeight: currentPath === '/global-report' ? '600' : '400',
+                  transition: 'all 0.15s',
+                  fontSize: '0.875rem',
+                  marginTop: '2px'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'white'; if (currentPath !== '/global-report') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = currentPath === '/global-report' ? 'white' : 'rgba(255, 255, 255, 0.6)'; if (currentPath !== '/global-report') e.currentTarget.style.background = 'transparent'; }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85, color: '#3b82f6', flexShrink: 0 }}>
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                <span style={{ 
+                  opacity: isOpen ? 1 : 0, 
+                  maxWidth: isOpen ? '150px' : '0px',
+                  transition: 'opacity 0.2s ease, max-width 0.25s cubic-bezier(0.25, 1, 0.5, 1)',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap'
+                }}>Team Global Report</span>
+              </Link>
             </div>
           )}
 
@@ -544,31 +578,13 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                 justifyContent: 'space-between', 
                 alignItems: 'center', 
                 marginBottom: isOpen ? '0.5rem' : '0px',
-                cursor: 'pointer',
                 userSelect: 'none',
                 padding: '4px 0'
               }}
             >
               <div 
-                onClick={() => setProjectsExpanded(!projectsExpanded)}
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}
               >
-                <svg 
-                  width="10" 
-                  height="10" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="rgba(255, 255, 255, 0.4)" 
-                  strokeWidth="3" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  style={{ 
-                    transform: projectsExpanded ? 'rotate(90deg)' : 'rotate(0deg)', 
-                    transition: 'transform 0.15s ease' 
-                  }}
-                >
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
                 <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.4)', fontWeight: '700', letterSpacing: '0.5px' }}>
                   Projects
                 </span>
@@ -600,7 +616,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
               )}
             </div>
 
-            {(projectsExpanded || !isOpen) && (
+            {true && (
               <div style={{ animation: 'slideDown 0.15s ease-out' }}>
                 <div style={{
                   maxHeight: (isOpen && showCreate) ? '150px' : '0px',
