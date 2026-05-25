@@ -44,7 +44,7 @@ const TaskCard = ({ task }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
               {task.assignee.profilePic ? (
                 <img 
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${task.assignee.profilePic}`} 
+                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${task.assignee.profilePic}`} 
                   alt={task.assignee.name} 
                   title={task.assignee.name} 
                   style={{

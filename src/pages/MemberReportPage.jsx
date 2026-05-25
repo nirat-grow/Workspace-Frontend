@@ -760,7 +760,7 @@ const MemberReportPage = ({ activeProject }) => {
       <div className="report-header">
         {targetUser?.profilePic ? (
           <img 
-            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${targetUser.profilePic}`} 
+            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${targetUser.profilePic}`} 
             alt={targetUser.name} 
             className="avatar"
           />

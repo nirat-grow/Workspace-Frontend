@@ -110,7 +110,7 @@ const MyTeamPage = ({ activeProject }) => {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                   {m.profilePic ? (
                     <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${m.profilePic}`} 
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${m.profilePic}`} 
                       alt={m.name} 
                       style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} 
                     />
@@ -260,7 +260,7 @@ const MyTeamPage = ({ activeProject }) => {
                   </div>
                 ) : leader.profilePic ? (
                   <img 
-                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${leader.profilePic}`} 
+                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${leader.profilePic}`} 
                     alt={leader.name} 
                     style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', border: '1px solid var(--border)' }} 
                   />

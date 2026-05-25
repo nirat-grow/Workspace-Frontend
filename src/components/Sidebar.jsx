@@ -15,6 +15,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [projectsExpanded, setProjectsExpanded] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
 
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
@@ -297,7 +298,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
             }}>
               {user?.profilePic ? (
                 <img
-                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.profilePic}`}
+                  src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${user.profilePic}`}
                   alt={user.name}
                   style={{
                     width: '36px',
@@ -631,9 +632,51 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                     <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.7rem', padding: '4px' }}>Create</button>
                   </form>
                 </div>
-                
+
+                {/* Project Search Bar */}
+                {isOpen && projects.length > 3 && (
+                  <div style={{
+                    marginBottom: '8px',
+                    position: 'relative'
+                  }}>
+                    <svg 
+                      width="12" height="12" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="rgba(255,255,255,0.35)" 
+                      strokeWidth="2.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search projects..."
+                      value={projectSearch}
+                      onChange={e => setProjectSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '6px',
+                        padding: '5px 10px 5px 28px',
+                        color: 'white',
+                        fontSize: '0.78rem',
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={e => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)'}
+                      onBlur={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
+                    />
+                  </div>
+                )}
+
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {projects.map(p => {
+                  {projects.filter(p => p.name.toLowerCase().includes(projectSearch.toLowerCase())).map(p => {
                     const isActive = activeProject?.id === p.id;
                     return (
                       <li 
@@ -682,7 +725,12 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                       </li>
                     );
                   })}
-                  {projects.length === 0 && isOpen && (
+                  {projects.filter(p => p.name.toLowerCase().includes(projectSearch.toLowerCase())).length === 0 && projectSearch && isOpen && (
+                    <li style={{ padding: '0.5rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', textAlign: 'center' }}>
+                      No projects match "{projectSearch}"
+                    </li>
+                  )}
+                  {projects.filter(p => p.name.toLowerCase().includes(projectSearch.toLowerCase())).length === 0 && !projectSearch && isOpen && (
                     <li style={{ padding: '0.5rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', textAlign: 'center' }}>
                       No projects found
                     </li>
@@ -970,7 +1018,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                     />
                   ) : user?.profilePic ? (
                     <img
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.profilePic}`}
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${user.profilePic}`}
                       alt="Current"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />

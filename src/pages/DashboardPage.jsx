@@ -13,8 +13,10 @@ import SquadDetailsPage from './SquadDetailsPage';
 import GlobalReportPage from './GlobalReportPage';
 import InvitePage from './InvitePage';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const DashboardPage = () => {
+  const { user } = useAuth();
   const [workspace, setWorkspace] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen');
@@ -146,7 +148,8 @@ const DashboardPage = () => {
         padding: '2rem 2rem 2rem 4.5rem'
       }}>
         <Routes>
-          <Route path="/" element={<Navigate to={activeProject ? `/board/${activeProject.id}` : "/reports"} />} />
+          <Route path="/" element={<Navigate to={activeProject ? `/board/${activeProject.id}` : (user?.globalRole === 'MEMBER' ? '/member-report' : '/reports')} />} />
+          <Route path="/board" element={<BoardPage />} />
           <Route path="/board/:projectId" element={<BoardPage />} />
           <Route path="/board/:projectId/member/:memberId" element={<BoardPage />} />
           <Route path="/reports" element={<ReportsPage activeProject={activeProject} />} />

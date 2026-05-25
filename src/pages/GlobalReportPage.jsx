@@ -480,7 +480,7 @@ const GlobalReportPage = () => {
                         <td data-label="Member">
                           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                             {m.profilePic ? (
-                              <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${m.profilePic}`} alt={m.name} style={{width:'30px',height:'30px',borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(99,102,241,0.1)'}} />
+                              <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${m.profilePic}`} alt={m.name} style={{width:'30px',height:'30px',borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(99,102,241,0.1)'}} />
                             ) : (
                               <div style={{width:'30px',height:'30px',borderRadius:'50%',background:'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))',color:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.7rem',fontWeight:700}}>
                                 {m.name?.split(' ').map(n=>n[0]).join('').toUpperCase()}

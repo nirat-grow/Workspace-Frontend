@@ -201,7 +201,7 @@ const SquadDetailsPage = ({ activeProject }) => {
           </div>
         ) : data.leader.profilePic ? (
           <img 
-            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${data.leader.profilePic}`} 
+            src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${data.leader.profilePic}`} 
             alt={data.leader.name} 
             style={{
               width: '80px',
@@ -419,7 +419,7 @@ const SquadDetailsPage = ({ activeProject }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {member.profilePic ? (
                     <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${member.profilePic}`} 
+                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${member.profilePic}`} 
                       alt={member.name} 
                       style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} 
                     />

@@ -420,7 +420,7 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                   }}
                 >
                   <a 
-                    href={`http://192.168.0.51:5000${a.url}`} 
+                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${a.url}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     style={{ fontSize: '0.75rem', textDecoration: 'none', color: 'var(--accent)', overflow: 'hidden', textOriginal: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontWeight: 600 }}

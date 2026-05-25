@@ -341,7 +341,7 @@ const MembersPage = ({ activeProject }) => {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
             {m.user.profilePic ? (
               <img 
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${m.user.profilePic}`} 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${m.user.profilePic}`} 
                 alt={m.user.name} 
                 style={{ 
                   width: '56px', 
@@ -819,7 +819,7 @@ const MembersPage = ({ activeProject }) => {
                     />
                     {m.user.profilePic ? (
                       <img 
-                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${m.user.profilePic}`} 
+                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api${m.user.profilePic}`} 
                         alt={m.user.name} 
                         style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} 
                       />
