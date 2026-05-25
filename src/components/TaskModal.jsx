@@ -462,11 +462,6 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
             {/* Assignee */}
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Assignee</div>
-              {user?.globalRole === 'MEMBER' ? (
-                <div style={{ padding: '8px 12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-dark)' }}>
-                  {task.assignee ? `${task.assignee.name} ${task.assignee.designation ? `• ${task.assignee.designation}` : ''}` : 'Unassigned'}
-                </div>
-              ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <select 
                     value={designationFilter} 
@@ -502,8 +497,8 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                         if (designationFilter !== 'ALL' && m.user?.designation !== designationFilter) {
                           return false;
                         }
-                        if (user?.globalRole === 'ADMIN') {
-                          return m.user.globalRole === 'TEAM_LEADER' || m.user.globalRole === 'MEMBER';
+                        if (user?.globalRole === 'ADMIN' || user?.globalRole === 'MEMBER') {
+                          return true;
                         }
                         if (user?.globalRole === 'TEAM_LEADER') {
                           if (m.user.id === user.id) return true; // Can assign to themselves
@@ -524,7 +519,6 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                     }
                   </select>
                 </div>
-              )}
             </div>
 
             {/* Status */}
@@ -670,7 +664,15 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                     <div>End: <strong style={{ color: 'var(--text-dark)' }}>{new Date(task.endTime).toLocaleDateString()}</strong></div>
                     <div style={{ marginTop: '4px', padding: '6px', background: 'rgba(16,185,129,0.06)', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.15)', color: '#10b981', fontWeight: 800, display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                       <span>Logged:</span>
-                      <span>{parseFloat(((new Date(task.endTime) - new Date(task.startTime)) / (1000 * 60 * 60)).toFixed(2))} hrs</span>
+                      <span>{
+                        (() => {
+                          const totalMs = new Date(task.endTime) - new Date(task.startTime);
+                          const totalMins = Math.floor(totalMs / (1000 * 60));
+                          const hrs = Math.floor(totalMins / 60);
+                          const mins = totalMins % 60;
+                          return `${hrs}h ${mins}m`;
+                        })()
+                      }</span>
                     </div>
                   </div>
                   <button 
@@ -684,23 +686,7 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
               )}
             </div>
 
-            {/* Time Logging */}
-            <div style={{ background: '#ffffff', border: '1px solid var(--border)', padding: '1rem', borderRadius: '8px' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dark)' }}>Time Logging</h4>
-              <form onSubmit={handleLogTime} style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                <input className="input" type="number" step="0.1" placeholder="Hours" value={hours} onChange={e => setHours(e.target.value)} style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.75rem', outline: 'none', color: '#000' }} required />
-                <input className="input" placeholder="Note (optional)" value={note} onChange={e => setNote(e.target.value)} style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.75rem', outline: 'none', color: '#000' }} />
-                <button type="submit" className="btn btn-primary" style={{ padding: '6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>Log Time</button>
-              </form>
-              <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {task.timeLogs.map(log => (
-                  <div key={log.id} style={{ fontSize: '0.7rem', padding: '6px', borderBottom: '1px solid var(--border)', color: 'var(--text-light)' }}>
-                    <strong style={{ color: 'var(--text-dark)' }}>{log.user.name}</strong> logged <strong>{log.hours}h</strong>
-                    {log.note && <div style={{ marginTop: '2px', fontStyle: 'italic' }}>{log.note}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
+
 
             {user?.globalRole !== 'MEMBER' && (
               <button 

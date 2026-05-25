@@ -872,54 +872,16 @@ const KanbanBoard = ({ filterUserId }) => {
             <option value="URGENT">Urgent</option>
           </select>
           
-          {/* Designation Filter for Assignee dropdown */}
-          {user?.globalRole !== 'MEMBER' && (
-            <select 
-              className="input" 
-              value={createTaskDesignationFilter} 
-              onChange={e => {
-                setCreateTaskDesignationFilter(e.target.value);
-                setAssigneeId(''); // Reset selected assignee when filter changes
-              }}
-              style={{ width: '150px', background: 'var(--main-bg)', border: '1px solid var(--border)' }}
-            >
-              <option value="ALL">All Designations</option>
-              <option value="Frontend">Frontend Developer</option>
-              <option value="Backend">Backend Developer</option>
-              <option value="FullStack">Full Stack Developer</option>
-              <option value="Flutter">Flutter Developer</option>
-              <option value="React">React Developer</option>
-              <option value="Node.js">Node.js Developer</option>
-              <option value="Python">Python Developer</option>
-              <option value="Unity">Unity Developer</option>
-              <option value="DevOps">DevOps Engineer</option>
-              <option value="UI/UX">UI/UX Designer</option>
-              <option value="QA">QA Engineer</option>
-              <option value="ProjectManager">Project Manager</option>
-              <option value="DataScience">Data Scientist</option>
-              <option value="SystemAdmin">System Administrator</option>
-              <option value="Other">Other</option>
-            </select>
-          )}
-
           <select 
             className="input" 
             value={assigneeId} 
             onChange={e => setAssigneeId(e.target.value)} 
             style={{ width: '150px' }}
-            disabled={user?.globalRole === 'MEMBER'}
           >
-            {user?.globalRole !== 'MEMBER' && <option value="">Unassigned</option>}
+            <option value="">Unassigned</option>
             {project?.members?.filter(m => {
-              if (user?.globalRole === 'MEMBER') {
-                return m.user.id === user.id;
-              }
-              // Apply dynamic designation filter if selected
-              if (createTaskDesignationFilter !== 'ALL' && m.user?.designation !== createTaskDesignationFilter) {
-                return false;
-              }
-              if (user?.globalRole === 'ADMIN') {
-                // Admin: Show all members in the project for assignment
+              if (user?.globalRole === 'ADMIN' || user?.globalRole === 'MEMBER') {
+                // Admin and Member: Show all members in the project for assignment
                 return true;
               }
               if (user?.globalRole === 'TEAM_LEADER') {
