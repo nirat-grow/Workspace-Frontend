@@ -376,7 +376,7 @@ const KanbanBoard = ({ filterUserId }) => {
           if (status === 'PROGRESS') {
             if (!t.startTime || t.status !== 'PROGRESS') updates.startTime = new Date().toISOString();
             updates.endTime = null;
-          } else if (status === 'REVIEW' || status === 'DONE') {
+          } else if (status === 'DONE') {
             if (t.startTime && !t.endTime) updates.endTime = new Date().toISOString();
           } else {
             updates.startTime = null;

@@ -614,17 +614,18 @@ const ReportsPage = ({ activeProject }) => {
 
     // Add Full Task History sheet
     if (historyTasks && historyTasks.length > 0) {
-      const historyHeader = ['Task Key', 'Title', 'Project', 'Assignee', 'Started At', 'Finished At', 'Total Worked'];
+      const historyHeader = ['Task Key', 'Title', 'Project', 'Assignee', 'Task Start Date', 'Task End Date', 'Completed At', 'Total Worked Time'];
       const historyRows = historyTasks.map(t => [
         t.taskKey || '',
         t.title || '',
         t.project?.name || '',
         t.assignee ? `${t.assignee.name}${t.assignee.designation ? ` (${t.assignee.designation})` : ''}` : 'Unassigned',
-        t.startTime ? new Date(t.startTime).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A',
-        t.endTime ? new Date(t.endTime).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A',
-        formatDuration(t.startTime, t.endTime)
+        t.createdAt ? new Date(t.createdAt) : '',
+        t.dueDate ? new Date(t.dueDate) : '',
+        t.updatedAt ? new Date(t.updatedAt) : '',
+        formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
       ]);
-      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [14, 30, 18, 20, 18, 18, 14], 1, 'FFFFFF', '2563EB', title), 'Full Task History');
+      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [14, 30, 18, 28, 18, 18, 18, 14], 1, 'FFFFFF', '2563EB', title), 'Full Task History');
     }
 
     const fileName = `Report_${filterType}_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -1263,11 +1264,11 @@ const ReportsPage = ({ activeProject }) => {
               <thead>
                 <tr>
                   <th>Task</th>
-                  <th>Project</th>
                   <th>Assignee</th>
-                  <th>Started At</th>
-                  <th>Finished At</th>
-                  <th style={{ textAlign: 'right' }}>Total Worked</th>
+                  <th>Task Start Date</th>
+                  <th>Task End Date</th>
+                  <th>Completion Date</th>
+                  <th style={{ textAlign: 'right' }}>Total Worked Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -1277,20 +1278,22 @@ const ReportsPage = ({ activeProject }) => {
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
                     </td>
-                    <td data-label="Project" className="cell-muted">{t.project?.name}</td>
                     <td data-label="Assignee">
                       <span className="status-pill pill-neutral">
                         {t.assignee ? `${t.assignee.name}${t.assignee.designation ? ` (${t.assignee.designation})` : ''}` : 'Unassigned'}
                       </span>
                     </td>
-                    <td data-label="Started At" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.startTime ? new Date(t.startTime).toLocaleString() : 'N/A'}
+                    <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                      {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
                     </td>
-                    <td data-label="Finished At" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.endTime ? new Date(t.endTime).toLocaleString() : 'N/A'}
+                    <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                      {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
-                    <td data-label="Total Worked" className="cell-success" style={{ textAlign: 'right' }}>
-                      {formatDuration(t.startTime, t.endTime)}
+                    <td data-label="Completion Date" className="cell-muted">
+                      {new Date(t.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
+                      {formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}
                     </td>
                   </tr>
                 ))}

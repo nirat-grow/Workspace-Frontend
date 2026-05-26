@@ -149,9 +149,9 @@ const DashboardPage = () => {
       }}>
         <Routes>
           <Route path="/" element={<Navigate to={activeProject ? `/board/${activeProject.id}` : (user?.globalRole === 'MEMBER' ? '/member-report' : '/reports')} />} />
-          <Route path="/board" element={<BoardPage />} />
-          <Route path="/board/:projectId" element={<BoardPage />} />
-          <Route path="/board/:projectId/member/:memberId" element={<BoardPage />} />
+          <Route path="/board" element={<BoardPage activeProject={activeProject} />} />
+          <Route path="/board/:projectId" element={<BoardPage activeProject={activeProject} />} />
+          <Route path="/board/:projectId/member/:memberId" element={<BoardPage activeProject={activeProject} />} />
           <Route path="/reports" element={<ReportsPage activeProject={activeProject} />} />
           <Route path="/global-report" element={<GlobalReportPage />} />
           <Route path="/activity" element={<ActivityPage />} />

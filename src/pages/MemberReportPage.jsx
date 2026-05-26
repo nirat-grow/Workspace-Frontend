@@ -416,10 +416,10 @@ const MemberReportPage = ({ activeProject }) => {
     const completedRows = data.completedTasks.map(task => [
       task.name || '',
       task.project || '',
-      task.startTime ? new Date(task.startTime) : '',
-      task.endTime ? new Date(task.endTime) : '',
+      task.createdAt ? new Date(task.createdAt) : '',
+      task.dueDate ? new Date(task.dueDate) : '',
       task.date ? new Date(task.date) : '',
-      formatDuration(task.startTime, task.endTime)
+      formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
     ]);
 
     const pendingRows = data.pendingTasks.map(task => [
@@ -482,7 +482,7 @@ const MemberReportPage = ({ activeProject }) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Metric', 'Value'], ...summaryRows], [24, 24], 1, 'FFFFFF', '0052CC', reportTitle), 'Summary');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Start Time', 'End Time / Status', 'Worked Time', 'Type'], ...progressExcelRows], [30, 18, 18, 18, 14, 12], 1, 'FFFFFF', '6D28D9', reportTitle), 'Current Tasks');
-    XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Started At', 'Finished At', 'Completed Date', 'Worked Duration'], ...completedRows], [26, 18, 18, 18, 16, 14], 1, 'FFFFFF', '10B981', reportTitle), 'Completed Tasks');
+    XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Task Start Date', 'Task End Date', 'Completion Date', 'Total Worked Time'], ...completedRows], [26, 18, 18, 18, 16, 14], 1, 'FFFFFF', '10B981', reportTitle), 'Completed Tasks');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Started At', 'Last Updated'], ...pendingRows], [26, 18, 18, 18], 1, 'FFFFFF', '6366F1', reportTitle), 'Pending Tasks');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Due Date', 'Days Overdue'], ...overdueRows], [26, 18, 16, 14], 1, 'FFFFFF', 'F59E0B', reportTitle), 'Overdue Tasks');
     XLSX.utils.book_append_sheet(workbook, createSheetFromRows([['Task Name', 'Project', 'Blocker Reason', 'Last Updated'], ...stuckRows], [26, 18, 24, 16], 1, 'FFFFFF', 'EF4444', reportTitle), 'Stuck Tasks');
@@ -513,15 +513,16 @@ const MemberReportPage = ({ activeProject }) => {
 
     // Add Full Task History sheet
     if (data.historyTasks && data.historyTasks.length > 0) {
-      const historyHeader = ['Task Name', 'Project', 'Started At', 'Finished At', 'Total Worked'];
-      const historyRows = data.historyTasks.map(t => [
-        t.name || '',
-        t.project || '',
-        t.startTime ? new Date(t.startTime).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A',
-        t.endTime ? new Date(t.endTime).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'N/A',
-        formatDuration(t.startTime, t.endTime)
+      const historyHeader = ['Task Name', 'Project', 'Task Start Date', 'Task End Date', 'Completion Date', 'Total Worked Time'];
+      const historyRows = data.historyTasks.map(task => [
+        task.name || '',
+        task.project || '',
+        task.createdAt ? new Date(task.createdAt) : '',
+        task.dueDate ? new Date(task.dueDate) : '',
+        task.date ? new Date(task.date) : '',
+        formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
       ]);
-      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [26, 18, 18, 18, 14], 1, 'FFFFFF', '2563EB', reportTitle), 'Full Task History');
+      XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [26, 18, 18, 18, 16, 14], 1, 'FFFFFF', '2563EB', reportTitle), 'Full Task History');
     }
 
     const fileName = `Personal_Report_${targetUser?.name?.replace(/\s+/g, '_') || 'User'}_${filterType}_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -675,9 +676,11 @@ const MemberReportPage = ({ activeProject }) => {
           historyTasks: historyData.map(t => ({
             id: t.id,
             name: `${t.taskKey} - ${t.title}`,
-            project: t.project?.name,
-            startTime: t.startTime,
-            endTime: t.endTime
+            project: t.project?.name || '',
+            createdAt: t.createdAt,
+            dueDate: t.dueDate,
+            date: t.updatedAt,
+            timeLogs: t.timeLogs || []
           })),
           progressTasks: (dailyData.progress || []).flatMap(t => {
             const mainRow = {
@@ -1151,20 +1154,20 @@ const MemberReportPage = ({ activeProject }) => {
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="responsive-table report-table">
-              <thead><tr><th>Task Name</th><th>Project</th><th>Started At</th><th>Finished At</th><th style={{ textAlign: 'right' }}>Total Worked</th></tr></thead>
+              <thead><tr><th>Task Name</th><th>Task Start Date</th><th>Task End Date</th><th>Completion Date</th><th style={{ textAlign: 'right' }}>Total Worked Time</th></tr></thead>
               <tbody>
                 {data.historyTasks?.map(task => (
                   <tr key={task.id}>
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
-                    <td data-label="Project" className="cell-muted">{task.project}</td>
-                    <td data-label="Started At" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.startTime ? new Date(task.startTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
+                    <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
                     </td>
-                    <td data-label="Finished At" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.endTime ? new Date(task.endTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
+                    <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
+                      {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
-                    <td data-label="Total Worked" className="cell-success" style={{ textAlign: 'right' }}>
-                      {formatDuration(task.startTime, task.endTime)}
+                    <td data-label="Completion Date" className="cell-muted">{new Date(task.date).toLocaleDateString()}</td>
+                    <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
+                      {formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}
                     </td>
                   </tr>
                 ))}

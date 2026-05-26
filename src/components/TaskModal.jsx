@@ -199,7 +199,7 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
       });
       fetchTask();
     } catch (err) {
-      alert('Failed to upload files');
+      alert('Failed to upload files: ' + (err.response?.data?.error || err.message));
     }
     e.target.value = null;
   };
@@ -451,7 +451,7 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 Upload Files
-                <input type="file" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
               </label>
             </div>
           </div>
@@ -675,13 +675,7 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                       }</span>
                     </div>
                   </div>
-                  <button 
-                    className="btn" 
-                    style={{ background: '#ffffff', border: '1px solid var(--border)', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '6px', fontSize: '0.7rem', width: '100%', borderRadius: '4px', fontWeight: 600, cursor: 'pointer' }}
-                    onClick={() => handleStatusChange('TODO')}
-                  >
-                    🔄 Reset Timer
-                  </button>
+
                 </div>
               )}
             </div>

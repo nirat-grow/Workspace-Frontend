@@ -13,9 +13,17 @@ const formatDuration = (startTime, endTime) => {
 };
 
 const TaskCard = ({ task }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const taskDateStr = task.dueDate ? task.dueDate.split('T')[0] : null;
-  const isOverdue = taskDateStr && taskDateStr < todayStr && task.status !== 'DONE';
+  let isOverdue = false;
+  if (task.dueDate && task.status !== 'DONE') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today in local time
+    
+    // Parse task due date and convert to local Date at midnight
+    const due = new Date(task.dueDate);
+    due.setHours(0, 0, 0, 0);
+    
+    isOverdue = due < today;
+  }
 
   return (
     <div className="card task-card" style={{ padding: '0.875rem', cursor: 'grab', userSelect: 'none', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(9, 30, 66, 0.13)' }}>
