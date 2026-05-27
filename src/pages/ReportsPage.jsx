@@ -730,7 +730,7 @@ const ReportsPage = ({ activeProject }) => {
             <span className="label-dot indigo"></span>
             Hours Tracked
           </div>
-          <div className="big-value" style={{ color: 'var(--accent)' }}>{parseFloat(Number(totalHours || 0).toFixed(2))}h</div>
+          <div className="big-value" style={{ color: 'var(--accent)' }}>{formatLoggedHours(totalHours || 0)}</div>
           <div className="small-label">Total hours logged in selected period</div>
         </div>
 
@@ -1016,13 +1016,13 @@ const ReportsPage = ({ activeProject }) => {
                       </span>
                     </td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
+                      {t.createdAt ? new Date(t.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </td>
                     <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
+                      {t.dueDate ? new Date(t.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
                     <td data-label="Completion Date" className="cell-muted">
-                      {new Date(t.updatedAt).toLocaleDateString()}
+                      {new Date(t.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
                       {formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}
@@ -1075,7 +1075,7 @@ const ReportsPage = ({ activeProject }) => {
                       </span>
                     </td>
                     <td data-label="Last Updated" className="cell-muted" style={{ textAlign: 'right' }}>
-                      {new Date(t.updatedAt).toLocaleDateString()}
+                      {new Date(t.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
                 ))}
@@ -1125,7 +1125,7 @@ const ReportsPage = ({ activeProject }) => {
                       </span>
                     </td>
                     <td data-label="Paused Date" className="cell-muted" style={{ textAlign: 'right' }}>
-                      {new Date(t.updatedAt).toLocaleDateString()}
+                      {new Date(t.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
                 ))}
@@ -1199,7 +1199,7 @@ const ReportsPage = ({ activeProject }) => {
                         <div style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '2px' }}>{m.completedTasks}/{m.taskCount} done</div>
                       </td>
                       <td data-label="Total Hours" className="cell-accent" style={{ textAlign: 'right' }}>
-                        {parseFloat(Number(m.totalHours || 0).toFixed(2))}h
+                        {formatLoggedHours(m.totalHours || 0)}
                       </td>
                     </tr>
                   ))}
@@ -1238,7 +1238,7 @@ const ReportsPage = ({ activeProject }) => {
                   <tr key={p.id}>
                     <td data-label="Project" className="cell-bold">{p.name}</td>
                     <td data-label="Active Members" className="cell-muted">{p.memberCount} people</td>
-                    <td data-label="Total Logged Hours" className="cell-accent" style={{ textAlign: 'right' }}>{parseFloat(Number(p.totalHours || 0).toFixed(2))}h</td>
+                    <td data-label="Total Logged Hours" className="cell-accent" style={{ textAlign: 'right' }}>{formatLoggedHours(p.totalHours || 0)}</td>
                   </tr>
                 ))}
                 {hours.length === 0 && (
@@ -1284,13 +1284,13 @@ const ReportsPage = ({ activeProject }) => {
                       </span>
                     </td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
+                      {t.createdAt ? new Date(t.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </td>
                     <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
+                      {t.dueDate ? new Date(t.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
                     <td data-label="Completion Date" className="cell-muted">
-                      {new Date(t.updatedAt).toLocaleDateString()}
+                      {new Date(t.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
                       {formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}

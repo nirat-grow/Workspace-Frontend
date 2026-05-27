@@ -247,7 +247,7 @@ const KanbanBoard = ({ filterUserId }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   
   // Time filter state
-  const [timeFilter, setTimeFilter] = useState('today');
+  const [timeFilter, setTimeFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -259,6 +259,7 @@ const KanbanBoard = ({ filterUserId }) => {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
   const [assigneeId, setAssigneeId] = useState('');
+  const [initialStatus, setInitialStatus] = useState('TODO');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]); // Default to Today
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]); // Default to Today
   
@@ -307,6 +308,10 @@ const KanbanBoard = ({ filterUserId }) => {
     if (projectId) {
       api.get(`/tasks?projectId=${projectId}`).then(res => setTasks(res.data)).catch(console.error);
       api.get(`/projects/${projectId}`).then(res => setProject(res.data)).catch(console.error);
+      
+      // Reset filter to All Tasks when switching projects
+      setTimeFilter('all');
+      setCustomDate('');
     }
   }, [projectId]);
 
@@ -447,20 +452,28 @@ const KanbanBoard = ({ filterUserId }) => {
   const handleCreateTask = async (e) => {
     e.preventDefault();
     try {
+      const combineTime = (dateStr) => {
+        if (!dateStr) return null;
+        const now = new Date();
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+      };
       await api.post('/tasks', { 
         title, 
         description, 
         priority, 
         projectId, 
         assigneeId: assigneeId || null,
-        dueDate: dueDate || null,
-        startTime: startDate || null
+        dueDate: combineTime(dueDate),
+        startTime: combineTime(startDate),
+        status: initialStatus
       });
       setTitle('');
       setDescription('');
       setAssigneeId('');
-      setStartDate(new Date().toISOString().split('T')[0]); // Reset to Today
-      setDueDate(new Date().toISOString().split('T')[0]); // Reset to Today
+      setInitialStatus('TODO');
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setDueDate(new Date().toISOString().split('T')[0]);
       setShowAdd(false);
     } catch (err) {
       alert('Failed to create task. Check permissions.');
@@ -487,8 +500,23 @@ const KanbanBoard = ({ filterUserId }) => {
 
   if (!projectId) return <div>Please select a project from the sidebar to view its board.</div>;
 
-  // Apply user filter
+  // Apply user filter (from URL)
   let filteredTasks = filterUserId ? tasks.filter(t => t.assigneeId === filterUserId) : tasks;
+
+  // Strict role-based filter to prevent socket leakage of unauthorized tasks
+  if (user?.globalRole === 'MEMBER') {
+    filteredTasks = filteredTasks.filter(t => t.assigneeId === user.id);
+  } else if (user?.globalRole === 'TEAM_LEADER') {
+    const allowedAssigneeIds = new Set([user.id]);
+    if (project && project.members) {
+      project.members.forEach(m => {
+        if (m.user?.teamLeaderId === user.id || (m.user?.teamLeaderId == null && m.user?.designation === user.designation)) {
+          allowedAssigneeIds.add(m.userId);
+        }
+      });
+    }
+    filteredTasks = filteredTasks.filter(t => allowedAssigneeIds.has(t.assigneeId));
+  }
 
   // Apply time filter
   const dateRange = getDateRange(timeFilter, customDate);
@@ -922,7 +950,19 @@ const KanbanBoard = ({ filterUserId }) => {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>Create</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-light)', textTransform: 'uppercase' }}>Initial Action</span>
+            <select 
+              className="input" 
+              value={initialStatus} 
+              onChange={e => setInitialStatus(e.target.value)} 
+              style={{ width: '130px', background: initialStatus === 'PROGRESS' ? '#e0e7ff' : 'white' }}
+            >
+              <option value="TODO">Default (Todo)</option>
+              <option value="PROGRESS">Start Now 🚀</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ whiteSpace: 'nowrap', marginTop: 'auto' }}>Create</button>
         </form>
       )}
 

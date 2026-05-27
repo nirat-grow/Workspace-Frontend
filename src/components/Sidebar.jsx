@@ -16,6 +16,12 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
   const [newProjectName, setNewProjectName] = useState('');
   const [projectsExpanded, setProjectsExpanded] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
+  
+  // Delete project states
+  const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [deleteSecretCode, setDeleteSecretCode] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
@@ -193,6 +199,30 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
       setShowCreate(false);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteProject = async (e) => {
+    e.preventDefault();
+    if (!deleteSecretCode) return;
+    try {
+      setDeleteError('');
+      await api.delete(`/projects/${projectToDelete.id}`, {
+        data: { adminSecret: deleteSecretCode }
+      });
+      
+      setProjects(projects.filter(p => p.id !== projectToDelete.id));
+      if (activeProject?.id === projectToDelete.id) {
+        setActiveProject(null);
+        navigate('/');
+      }
+      setShowDeleteProjectModal(false);
+      setProjectToDelete(null);
+      setDeleteSecretCode('');
+      setToast({ show: true, message: 'Project deleted successfully!', type: 'success' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || 'Failed to delete project');
     }
   };
 
@@ -734,10 +764,36 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                           maxWidth: isOpen ? '150px' : '0px',
                           transition: 'opacity 0.2s ease, max-width 0.25s cubic-bezier(0.25, 1, 0.5, 1)',
                           overflow: 'hidden',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          flex: 1
                         }}>
                           {p.name}
                         </span>
+                        {user?.globalRole === 'ADMIN' && isOpen && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProjectToDelete(p);
+                              setDeleteSecretCode('');
+                              setDeleteError('');
+                              setShowDeleteProjectModal(true);
+                            }}
+                            style={{
+                              background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+                              cursor: 'pointer', padding: '4px', borderRadius: '4px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'none'; }}
+                            title="Delete Project"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        )}
                       </li>
                     );
                   })}
@@ -1152,6 +1208,114 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                   style={{ flex: 1, background: 'var(--accent)', border: 'none', fontWeight: 700, padding: '10px', borderRadius: '8px', color: 'white', cursor: 'pointer', fontSize: '0.85rem' }}
                 >
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Project Premium Modal */}
+      {showDeleteProjectModal && projectToDelete && createPortal(
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: '#ffffff', width: '100%', maxWidth: '420px', borderRadius: '16px',
+            padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            position: 'relative', border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <button 
+              onClick={() => setShowDeleteProjectModal(false)}
+              style={{
+                position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none',
+                color: '#64748b', cursor: 'pointer', padding: '4px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ 
+                width: '64px', height: '64px', borderRadius: '16px', background: '#fef2f2', 
+                color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '1rem', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)'
+              }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                Delete Project
+              </h2>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', lineHeight: 1.5 }}>
+                You are about to permanently delete <strong>{projectToDelete.name}</strong>. This will erase all tasks, comments, and files associated with it. This action cannot be undone.
+              </p>
+            </div>
+
+            <form onSubmit={handleDeleteProject}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Admin Secret Code
+                </label>
+                <input 
+                  type="password"
+                  value={deleteSecretCode}
+                  onChange={e => setDeleteSecretCode(e.target.value)}
+                  placeholder="Enter secret code to confirm"
+                  required
+                  style={{
+                    width: '100%', padding: '10px 12px', fontSize: '0.875rem', border: '1px solid #cbd5e1',
+                    borderRadius: '8px', outline: 'none', transition: 'border-color 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor = '#ef4444'}
+                  onBlur={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                />
+                {deleteError && (
+                  <div style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {deleteError}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  type="button"
+                  onClick={() => setShowDeleteProjectModal(false)}
+                  style={{
+                    flex: 1, padding: '10px', background: '#f8fafc', color: '#475569',
+                    border: '1px solid #e2e8f0', borderRadius: '8px', fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.875rem'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={!deleteSecretCode}
+                  style={{
+                    flex: 1, padding: '10px', background: '#ef4444', color: '#ffffff',
+                    border: 'none', borderRadius: '8px', fontWeight: 600, cursor: !deleteSecretCode ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s', fontSize: '0.875rem', opacity: !deleteSecretCode ? 0.6 : 1,
+                    boxShadow: !deleteSecretCode ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.25)'
+                  }}
+                  onMouseEnter={e => { if (deleteSecretCode) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { if (deleteSecretCode) e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  Permanently Delete
                 </button>
               </div>
             </form>

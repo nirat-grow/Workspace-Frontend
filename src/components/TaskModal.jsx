@@ -96,11 +96,17 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
 
   const handleUpdate = async () => {
     try {
+      const combineTime = (dateStr) => {
+        if (!dateStr) return null;
+        const now = new Date();
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+      };
       await api.put(`/tasks/${taskId}`, { 
         title: editTitle, 
         description: editDesc, 
-        dueDate: editDueDate || null,
-        startTime: editStartDate || null
+        dueDate: combineTime(editDueDate),
+        startTime: combineTime(editStartDate)
       });
       setIsEditing(false);
       fetchTask();
@@ -607,9 +613,22 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                 {task.startTime && !task.endTime && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>
                     <span style={{ width: '6px', height: '6px', background: '#10b981', borderRadius: '50%', display: 'inline-block', animation: 'spin 1.5s linear infinite' }}></span>
-                    Active
+                    Running
                   </span>
                 )}
+              </div>
+
+              {/* Total Time Logged Display */}
+              <div style={{ padding: '8px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '6px', border: '1px solid rgba(99, 102, 241, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '4px' }}>
+                <span style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Total Logged:</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
+                  {(() => {
+                    const totalHours = task.timeLogs?.reduce((acc, log) => acc + (parseFloat(log.hours) || 0), 0) || 0;
+                    const hrs = Math.floor(totalHours);
+                    const mins = Math.round((totalHours - hrs) * 60);
+                    return `${hrs}h ${mins}m`;
+                  })()}
+                </span>
               </div>
 
               {!task.startTime ? (
@@ -632,6 +651,10 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
                     Started: <strong style={{ color: 'var(--text-dark)' }}>{new Date(task.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px', background: 'rgba(16,185,129,0.06)', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.15)', fontSize: '0.75rem' }}>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Current Session:</span>
+                    <strong style={{ color: '#10b981' }}><LiveTimer startTime={task.startTime} /></strong>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     <button 
@@ -662,8 +685,8 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                   <div style={{ fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '4px', color: 'var(--text-light)' }}>
                     <div>Start: <strong style={{ color: 'var(--text-dark)' }}>{new Date(task.startTime).toLocaleDateString()}</strong></div>
                     <div>End: <strong style={{ color: 'var(--text-dark)' }}>{new Date(task.endTime).toLocaleDateString()}</strong></div>
-                    <div style={{ marginTop: '4px', padding: '6px', background: 'rgba(16,185,129,0.06)', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.15)', color: '#10b981', fontWeight: 800, display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                      <span>Logged:</span>
+                    <div style={{ marginTop: '4px', padding: '6px', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #e2e8f0', color: '#475569', fontWeight: 600, display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                      <span>Last Session:</span>
                       <span>{
                         (() => {
                           const totalMs = new Date(task.endTime) - new Date(task.startTime);
@@ -675,7 +698,6 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                       }</span>
                     </div>
                   </div>
-
                 </div>
               )}
             </div>
@@ -809,6 +831,28 @@ const HoldReasonModal = ({ show, onConfirm, onCancel, value, onChange }) => {
       </div>
     </div>
   );
+};
+
+const LiveTimer = ({ startTime }) => {
+  const [elapsed, setElapsed] = useState('');
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const start = new Date(startTime);
+      const diff = now - start;
+      const totalMins = Math.floor(diff / (1000 * 60));
+      const hrs = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      setElapsed(`${hrs}h ${mins}m`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  return <span>{elapsed}</span>;
 };
 
 export default TaskModal;

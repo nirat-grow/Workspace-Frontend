@@ -833,7 +833,7 @@ const MemberReportPage = ({ activeProject }) => {
             <span className="label-dot indigo"></span>
             Hours Tracked
           </div>
-          <div className="big-value" style={{ color: 'var(--accent)' }}>{parseFloat(Number(data.performance.totalHours || 0).toFixed(2))}h</div>
+          <div className="big-value" style={{ color: 'var(--accent)' }}>{formatLoggedHours(data.performance.totalHours || 0)}</div>
           <div className="small-label">Total hours logged in selected period</div>
         </div>
 
@@ -1020,7 +1020,7 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={i}>
                     <td data-label="Project Name" className="cell-bold">{project.name}</td>
                     <td data-label="My Role"><span className="status-pill pill-neutral">{project.role}</span></td>
-                    <td data-label="Hours Contributed" className="cell-accent" style={{ textAlign: 'right' }}>{parseFloat(Number(project.hours || 0).toFixed(2))}h</td>
+                    <td data-label="Hours Contributed" className="cell-accent" style={{ textAlign: 'right' }}>{formatLoggedHours(project.hours || 0)}</td>
                   </tr>
                 ))}
                 {data.projectHours.length === 0 && (<tr><td colSpan="3" className="report-empty-state">No hours logged yet.</td></tr>)}
@@ -1045,12 +1045,12 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={task.id}>
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
+                      {task.createdAt ? new Date(task.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </td>
                     <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
+                      {task.dueDate ? new Date(task.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
-                    <td data-label="Completion Date" className="cell-muted">{new Date(task.date).toLocaleDateString()}</td>
+                    <td data-label="Completion Date" className="cell-muted">{new Date(task.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
                       {formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}
                     </td>
@@ -1078,7 +1078,7 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={task.id}>
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Stuck Reason"><span className="status-pill pill-red">{task.reason}</span></td>
-                    <td data-label="Last Updated" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleDateString()}</td>
+                    <td data-label="Last Updated" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                   </tr>
                 ))}
                 {(!data.stuckTasks || data.stuckTasks.length === 0) && (<tr><td colSpan="3" className="report-empty-state">No stuck tasks currently. 🚀</td></tr>)}
@@ -1103,7 +1103,7 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={task.id}>
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Hold Reason"><span className="status-pill pill-amber">{task.reason}</span></td>
-                    <td data-label="Date Paused" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleDateString()}</td>
+                    <td data-label="Date Paused" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                   </tr>
                 ))}
                 {(!data.holdTasks || data.holdTasks.length === 0) && (<tr><td colSpan="3" className="report-empty-state">No tasks currently on hold.</td></tr>)}
@@ -1160,12 +1160,12 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={task.id}>
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'N/A'}
+                      {task.createdAt ? new Date(task.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </td>
                     <td data-label="Task End Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
-                      {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
+                      {task.dueDate ? new Date(task.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'No Due Date'}
                     </td>
-                    <td data-label="Completion Date" className="cell-muted">{new Date(task.date).toLocaleDateString()}</td>
+                    <td data-label="Completion Date" className="cell-muted">{new Date(task.date).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td data-label="Total Worked Time" className="cell-success" style={{ textAlign: 'right' }}>
                       {formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))}
                     </td>
