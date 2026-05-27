@@ -398,6 +398,16 @@ const MemberReportPage = ({ activeProject }) => {
   const [customMonth, setCustomMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7)); // YYYY-MM
   const activeRangeText = getFriendlyDateRangeText(filterType, customDate, customMonth);
 
+  const formatExcelDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-US', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
+
   const handleDownloadReport = () => {
     const reportTitle = `Personal Report - ${targetUser?.name || 'User'}`;
     const summaryRows = [
@@ -416,23 +426,23 @@ const MemberReportPage = ({ activeProject }) => {
     const completedRows = data.completedTasks.map(task => [
       task.name || '',
       task.project || '',
-      task.createdAt ? new Date(task.createdAt) : '',
-      task.dueDate ? new Date(task.dueDate) : '',
-      task.date ? new Date(task.date) : '',
+      formatExcelDate(task.createdAt),
+      formatExcelDate(task.dueDate),
+      formatExcelDate(task.date),
       formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
     ]);
 
     const pendingRows = data.pendingTasks.map(task => [
       task.name || '',
       task.project || '',
-      task.startTime ? new Date(task.startTime) : '',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.startTime),
+      formatExcelDate(task.updatedAt)
     ]);
 
     const overdueRows = data.overdue.map(task => [
       task.name || '',
       task.project || '',
-      task.dueDate ? new Date(task.dueDate) : '',
+      formatExcelDate(task.dueDate),
       task.daysOverdue || 0
     ]);
 
@@ -440,14 +450,14 @@ const MemberReportPage = ({ activeProject }) => {
       task.name || '',
       task.project || '',
       task.reason || 'No reason provided',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.updatedAt)
     ]);
 
     const holdRows = (data.holdTasks || []).map(task => [
       task.name || '',
       task.project || '',
       task.reason || 'Priority Shift',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.updatedAt)
     ]);
 
     // Build Current Tasks (Progress Tasks) rows for Excel
@@ -456,11 +466,11 @@ const MemberReportPage = ({ activeProject }) => {
       let endTimeStr = 'Paused';
       let workedTime = 'Paused';
       if (task.isLog) {
-        startTimeStr = task.startTime ? new Date(task.startTime) : '';
-        endTimeStr = task.endTime ? new Date(task.endTime) : '';
+        startTimeStr = formatExcelDate(task.startTime);
+        endTimeStr = formatExcelDate(task.endTime);
         workedTime = formatLoggedHours(task.totalHours);
       } else if (task.status === 'PROGRESS') {
-        startTimeStr = task.startTime ? new Date(task.startTime) : '';
+        startTimeStr = formatExcelDate(task.startTime);
         endTimeStr = 'Currently Running';
         const diffMs = new Date() - new Date(task.startTime);
         const diffSecs = Math.floor(Math.max(diffMs, 0) / 1000);
@@ -517,9 +527,9 @@ const MemberReportPage = ({ activeProject }) => {
       const historyRows = data.historyTasks.map(task => [
         task.name || '',
         task.project || '',
-        task.createdAt ? new Date(task.createdAt) : '',
-        task.dueDate ? new Date(task.dueDate) : '',
-        task.date ? new Date(task.date) : '',
+        formatExcelDate(task.createdAt),
+        formatExcelDate(task.dueDate),
+        formatExcelDate(task.date),
         formatLoggedHours((task.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
       ]);
       XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [26, 18, 18, 18, 16, 14], 1, 'FFFFFF', '2563EB', reportTitle), 'Full Task History');

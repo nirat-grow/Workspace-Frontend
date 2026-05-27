@@ -260,6 +260,16 @@ const GlobalReportPage = () => {
   const trend = data?.completionTrend || [];
   const members = data?.memberPerformance || [];
 
+  const formatExcelDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-US', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
+
   const handleDownloadReport = () => {
     if (!data) return;
     const reportTitle = `Global Report - ${user?.globalRole === 'TEAM_LEADER' ? 'Core Team' : 'All Projects'}`;
@@ -308,7 +318,7 @@ const GlobalReportPage = () => {
       t.title || '',
       t.project?.name || '',
       t.assignee?.name || 'Unassigned',
-      t.dueDate ? new Date(t.dueDate) : '',
+      formatExcelDate(t.dueDate),
       t.daysOverdue || 0
     ]);
 
@@ -317,14 +327,14 @@ const GlobalReportPage = () => {
       t.project?.name || '',
       t.assignee?.name || 'Unassigned',
       t.stuckReason || 'No reason',
-      t.updatedAt ? new Date(t.updatedAt) : ''
+      formatExcelDate(t.updatedAt)
     ]);
 
     const completedRows = (data.completedTasks || []).map(t => [
       t.title || '',
       t.project?.name || '',
       t.assignee?.name || 'Unassigned',
-      t.updatedAt ? new Date(t.updatedAt) : '',
+      formatExcelDate(t.updatedAt),
       formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
     ]);
 
@@ -340,7 +350,7 @@ const GlobalReportPage = () => {
         t.title || '',
         t.project?.name || '',
         t.assignee?.name || 'Unassigned',
-        t.startTime ? new Date(t.startTime) : '',
+        formatExcelDate(t.startTime),
         'Currently Running',
         workedTime
       ];

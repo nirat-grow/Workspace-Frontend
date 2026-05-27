@@ -421,6 +421,16 @@ const ReportsPage = ({ activeProject }) => {
   const rStart = new Date(dateRangeObj.startDate);
   const rEnd = new Date(dateRangeObj.endDate);
 
+  const formatExcelDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-US', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  };
+
   const progressTasks = (daily.progress || []).flatMap(t => {
     const mainRow = {
       id: t.id,
@@ -492,9 +502,9 @@ const ReportsPage = ({ activeProject }) => {
         task.title || '',
         task.project?.name || '',
         task.assignee ? `${task.assignee.name}${task.assignee.designation ? ` (${task.assignee.designation})` : ''}` : 'Unassigned',
-        task.createdAt ? new Date(task.createdAt) : '',
-        task.dueDate ? new Date(task.dueDate) : '',
-        task.updatedAt ? new Date(task.updatedAt) : '',
+        formatExcelDate(task.createdAt),
+        formatExcelDate(task.dueDate),
+        formatExcelDate(task.updatedAt),
         formatLoggedHours(totalHours)
       ];
     });
@@ -504,8 +514,8 @@ const ReportsPage = ({ activeProject }) => {
       task.title || '',
       task.project?.name || '',
       task.assignee ? `${task.assignee.name}${task.assignee.designation ? ` (${task.assignee.designation})` : ''}` : 'Unassigned',
-      task.startTime ? new Date(task.startTime) : '',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.startTime),
+      formatExcelDate(task.updatedAt)
     ]);
 
     const overdueRows = overdue.map(task => [
@@ -513,7 +523,7 @@ const ReportsPage = ({ activeProject }) => {
       task.title || '',
       task.project?.name || '',
       task.assignee ? `${task.assignee.name}${task.assignee.designation ? ` (${task.assignee.designation})` : ''}` : 'Unassigned',
-      task.dueDate ? new Date(task.dueDate) : '',
+      formatExcelDate(task.dueDate),
       task.daysOverdue || 0
     ]);
 
@@ -523,7 +533,7 @@ const ReportsPage = ({ activeProject }) => {
       task.project?.name || '',
       task.assignee ? `${task.assignee.name}${task.assignee.designation ? ` (${task.assignee.designation})` : ''}` : 'Unassigned',
       task.stuckReason || 'No reason provided',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.updatedAt)
     ]);
 
     const holdRows = (daily.hold || []).map(task => [
@@ -532,7 +542,7 @@ const ReportsPage = ({ activeProject }) => {
       task.project?.name || '',
       task.assignee ? `${task.assignee.name}${task.assignee.designation ? ` (${task.assignee.designation})` : ''}` : 'Unassigned',
       task.holdReason || 'Priority Shift',
-      task.updatedAt ? new Date(task.updatedAt) : ''
+      formatExcelDate(task.updatedAt)
     ]);
 
     // Build Current Tasks (Progress Tasks) rows for Excel
@@ -541,11 +551,11 @@ const ReportsPage = ({ activeProject }) => {
       let endTimeStr = 'Paused';
       let workedTime = 'Paused';
       if (task.isLog) {
-        startTimeStr = task.startTime ? new Date(task.startTime) : '';
-        endTimeStr = task.endTime ? new Date(task.endTime) : '';
+        startTimeStr = formatExcelDate(task.startTime);
+        endTimeStr = formatExcelDate(task.endTime);
         workedTime = formatLoggedHours(task.totalHours);
       } else if (task.status === 'PROGRESS') {
-        startTimeStr = task.startTime ? new Date(task.startTime) : '';
+        startTimeStr = formatExcelDate(task.startTime);
         endTimeStr = 'Currently Running';
         const diffMs = new Date() - new Date(task.startTime);
         const diffSecs = Math.floor(diffMs / 1000);
@@ -620,9 +630,9 @@ const ReportsPage = ({ activeProject }) => {
         t.title || '',
         t.project?.name || '',
         t.assignee ? `${t.assignee.name}${t.assignee.designation ? ` (${t.assignee.designation})` : ''}` : 'Unassigned',
-        t.createdAt ? new Date(t.createdAt) : '',
-        t.dueDate ? new Date(t.dueDate) : '',
-        t.updatedAt ? new Date(t.updatedAt) : '',
+        formatExcelDate(t.createdAt),
+        formatExcelDate(t.dueDate),
+        formatExcelDate(t.updatedAt),
         formatLoggedHours((t.timeLogs || []).reduce((sum, log) => sum + log.hours, 0))
       ]);
       XLSX.utils.book_append_sheet(workbook, createSheetFromRows([historyHeader, ...historyRows], [14, 30, 18, 28, 18, 18, 18, 14], 1, 'FFFFFF', '2563EB', title), 'Full Task History');
