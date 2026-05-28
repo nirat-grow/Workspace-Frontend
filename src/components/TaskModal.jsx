@@ -356,8 +356,8 @@ const TaskModal = ({ taskId, onClose, projectId }) => {
                     )}
                   </div>
                 </div>
-                <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-light)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                  {task.description || <span style={{ fontStyle: 'italic', opacity: 0.6 }}>No description provided.</span>}
+                <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-dark)', fontSize: '0.95rem', lineHeight: 1.6, fontWeight: 500 }}>
+                  {task.description || <span style={{ fontStyle: 'italic', opacity: 0.6, color: 'var(--text-light)', fontWeight: 400 }}>No description provided.</span>}
                 </div>
                 
                 {task.status === 'STUCK' && (

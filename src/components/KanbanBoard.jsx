@@ -20,7 +20,7 @@ const TIME_FILTERS = [
   { id: 'today', label: 'Today' },
   { id: 'yesterday', label: 'Yesterday' },
   { id: 'week', label: 'This Week' },
-  { id: 'custom', label: 'Pick a Date' },
+  { id: 'custom', label: 'Custom Range' },
 ];
 
 const getFilterIcon = (id, color = 'currentColor') => {
@@ -75,7 +75,7 @@ const getFilterIcon = (id, color = 'currentColor') => {
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
 const endOfDay = (d) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
 
-const getDateRange = (filterId, customDate) => {
+const getDateRange = (filterId, customDate, customEndDate) => {
   const now = new Date();
   const getYYYYMMDD = (d) => d.toISOString().split('T')[0];
   
@@ -97,15 +97,15 @@ const getDateRange = (filterId, customDate) => {
       return { type: 'list', dates };
     }
     case 'custom': {
-      if (!customDate) return null;
-      return { type: 'exact', date: customDate };
+      if (!customDate || !customEndDate) return null;
+      return { type: 'range', start: customDate, end: customEndDate };
     }
     default:
       return null;
   }
 };
 
-const formatDateLabel = (filterId, customDate) => {
+const formatDateLabel = (filterId, customDate, customEndDate) => {
   const now = new Date();
   switch (filterId) {
     case 'today': return `Today — ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
@@ -115,9 +115,10 @@ const formatDateLabel = (filterId, customDate) => {
     }
     case 'week': return 'Last 7 Days';
     case 'custom': {
-      if (!customDate) return 'Pick a Date';
-      const d = new Date(customDate);
-      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      if (!customDate || !customEndDate) return 'Custom Range';
+      const d1 = new Date(customDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const d2 = new Date(customEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `${d1} - ${d2}`;
     }
     default: return 'All Tasks';
   }
@@ -249,10 +250,14 @@ const KanbanBoard = ({ filterUserId }) => {
   // Time filter state
   const [timeFilter, setTimeFilter] = useState('all');
   const [customDate, setCustomDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  const dateInputRef = useRef(null);
   
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   // New task form state
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState('');
@@ -312,6 +317,7 @@ const KanbanBoard = ({ filterUserId }) => {
       // Reset filter to All Tasks when switching projects
       setTimeFilter('all');
       setCustomDate('');
+      setCustomEndDate('');
     }
   }, [projectId]);
 
@@ -483,19 +489,13 @@ const KanbanBoard = ({ filterUserId }) => {
   const handleTimeFilterSelect = (filterId) => {
     if (filterId === 'custom') {
       setTimeFilter('custom');
-      setShowTimeDropdown(false);
-      // Trigger the hidden date input
-      setTimeout(() => dateInputRef.current?.showPicker?.(), 100);
+      // Do not close dropdown, let them pick dates inside it
       return;
     }
     setTimeFilter(filterId);
     setCustomDate('');
+    setCustomEndDate('');
     setShowTimeDropdown(false);
-  };
-
-  const handleCustomDateChange = (e) => {
-    setCustomDate(e.target.value);
-    setTimeFilter('custom');
   };
 
   if (!projectId) return <div>Please select a project from the sidebar to view its board.</div>;
@@ -518,8 +518,17 @@ const KanbanBoard = ({ filterUserId }) => {
     filteredTasks = filteredTasks.filter(t => allowedAssigneeIds.has(t.assigneeId));
   }
 
+  // Apply search filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    filteredTasks = filteredTasks.filter(t => 
+      (t.title && t.title.toLowerCase().includes(query)) || 
+      (t.taskKey && t.taskKey.toLowerCase().includes(query))
+    );
+  }
+
   // Apply time filter
-  const dateRange = getDateRange(timeFilter, customDate);
+  const dateRange = getDateRange(timeFilter, customDate, customEndDate);
   if (dateRange) {
     filteredTasks = filteredTasks.filter(t => {
       const startStr = t.createdAt ? t.createdAt.split('T')[0] : null;
@@ -544,6 +553,17 @@ const KanbanBoard = ({ filterUserId }) => {
         return matchesDate(dateRange.date);
       } else if (dateRange.type === 'list') {
         return dateRange.dates.some(d => matchesDate(d));
+      } else if (dateRange.type === 'range') {
+        const rStart = dateRange.start;
+        const rEnd = dateRange.end;
+        if (startStr && dueStr) {
+          return startStr <= rEnd && dueStr >= rStart;
+        } else if (startStr) {
+          return startStr >= rStart && startStr <= rEnd;
+        } else if (dueStr) {
+          return dueStr >= rStart && dueStr <= rEnd;
+        }
+        return false;
       }
       return true;
     });
@@ -600,7 +620,7 @@ const KanbanBoard = ({ filterUserId }) => {
 
   // Current filter label
   const currentFilterConfig = TIME_FILTERS.find(f => f.id === timeFilter);
-  const dateLabel = formatDateLabel(timeFilter, customDate);
+  const dateLabel = formatDateLabel(timeFilter, customDate, customEndDate);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -632,13 +652,53 @@ const KanbanBoard = ({ filterUserId }) => {
       {/* Top toolbar: Action buttons + Time filter */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
         {/* Left: Action buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {canCreate && !filterUserId && (
             <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>+ Add Task</button>
           )}
           {canAddMember && !filterUserId && (
             <button className="btn" style={{ background: 'var(--border)', color: 'var(--text-main)' }} onClick={toggleMembers}>Add Member</button>
           )}
+          {/* Search Input */}
+          <div style={{ position: 'relative', marginLeft: '4px' }}>
+            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: isSearchFocused ? 'var(--accent)' : 'var(--text-light)', display: 'flex', transition: 'color 0.2s' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input 
+              type="text" 
+              placeholder="Search tasks..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              style={{
+                padding: '7px 14px 7px 32px',
+                border: isSearchFocused ? '1px solid var(--accent)' : '1px solid var(--border)',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                color: 'var(--text-dark)',
+                outline: 'none',
+                minWidth: '240px',
+                background: isSearchFocused ? '#ffffff' : '#f8fafc',
+                boxShadow: isSearchFocused ? '0 0 0 3px rgba(99, 102, 241, 0.15)' : 'inset 0 1px 2px rgba(0, 0, 0, 0.02)',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={e => {
+                if (!isSearchFocused) {
+                  e.currentTarget.style.background = '#ffffff';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isSearchFocused) {
+                  e.currentTarget.style.background = '#f8fafc';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                }
+              }}
+            />
+          </div>
         </div>
 
         {/* Right: Time Filter Dropdown */}
@@ -777,21 +837,31 @@ const KanbanBoard = ({ filterUserId }) => {
                   );
                 })}
               </div>
-              {/* Show custom date display if custom is selected */}
-              {timeFilter === 'custom' && customDate && (
-                <div style={{ borderTop: '1px solid var(--border)', padding: '8px 10px', fontSize: '0.75rem', color: 'var(--text-light)', background: '#FAFBFC', marginTop: '4px', borderRadius: '0 0 4px 4px' }}>
-                  Selected: <strong style={{ color: 'var(--text-dark)' }}>{new Date(customDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</strong>
+              {/* Show custom date range inputs if custom is selected */}
+              {timeFilter === 'custom' && (
+                <div style={{ borderTop: '1px solid var(--border)', padding: '10px', fontSize: '0.8rem', background: '#FAFBFC', marginTop: '4px', borderRadius: '0 0 4px 4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 600 }}>Start Date</label>
+                    <input 
+                      type="date" 
+                      value={customDate} 
+                      onChange={e => setCustomDate(e.target.value)} 
+                      style={{ padding: '6px', border: '1px solid var(--border)', borderRadius: '4px', outline: 'none', color: 'var(--text-dark)' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ color: 'var(--text-light)', fontSize: '0.75rem', fontWeight: 600 }}>End Date</label>
+                    <input 
+                      type="date" 
+                      value={customEndDate} 
+                      onChange={e => setCustomEndDate(e.target.value)} 
+                      style={{ padding: '6px', border: '1px solid var(--border)', borderRadius: '4px', outline: 'none', color: 'var(--text-dark)' }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
           )}
-          <input
-            ref={dateInputRef}
-            type="date"
-            value={customDate}
-            onChange={handleCustomDateChange}
-            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', top: 0, left: 0, width: 0, height: 0 }}
-          />
         </div>
       </div>
 

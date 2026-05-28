@@ -3,6 +3,7 @@ import * as StandardXLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { useParams } from 'react-router-dom';
+import TaskModal from '../components/TaskModal';
 
 const XLSX = window.XLSX || StandardXLSX;
 
@@ -364,6 +365,7 @@ const MemberReportPage = ({ activeProject }) => {
   const { user: currentUser } = useAuth();
   const { targetUserId } = useParams();
   const [targetUser, setTargetUser] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [data, setData] = useState({
     performance: { totalHours: 0, completedTasks: 0, productivity: 0 },
     dailyStatus: { pending: 0, stuck: 0, activity: [] },
@@ -959,7 +961,7 @@ const MemberReportPage = ({ activeProject }) => {
                   }
 
                   return (
-                    <tr key={task.rowKey} style={{ background: task.isLog ? '#fafbff' : '#ffffff' }}>
+                    <tr key={task.rowKey} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId || activeProject?.id })} style={{ background: task.isLog ? '#fafbff' : '#ffffff', cursor: 'pointer' }} className="hoverable-row">
                       <td data-label="Task Name" className="cell-bold">
                         {task.name}
                         {task.isLog && <span className="past-log-badge">Past Log</span>}
@@ -1002,7 +1004,7 @@ const MemberReportPage = ({ activeProject }) => {
               <thead><tr><th>Task Name</th><th>Due Date</th><th style={{ textAlign: 'right' }}>Days Overdue</th></tr></thead>
               <tbody>
                 {data.overdue.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Due Date" className="cell-muted">{new Date(task.dueDate).toLocaleDateString()}</td>
                     <td data-label="Days Overdue" className="cell-danger" style={{ textAlign: 'right' }}>{task.daysOverdue} days</td>
@@ -1052,7 +1054,7 @@ const MemberReportPage = ({ activeProject }) => {
               <thead><tr><th>Task Name</th><th>Task Start Date</th><th>Task End Date</th><th>Completion Date</th><th style={{ textAlign: 'right' }}>Total Worked Time</th></tr></thead>
               <tbody>
                 {data.completedTasks?.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
                       {task.createdAt ? new Date(task.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
@@ -1085,7 +1087,7 @@ const MemberReportPage = ({ activeProject }) => {
               <thead><tr><th>Task Name</th><th>Stuck Reason</th><th style={{ textAlign: 'right' }}>Last Updated</th></tr></thead>
               <tbody>
                 {data.stuckTasks?.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Stuck Reason"><span className="status-pill pill-red">{task.reason}</span></td>
                     <td data-label="Last Updated" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
@@ -1110,7 +1112,7 @@ const MemberReportPage = ({ activeProject }) => {
               <thead><tr><th>Task Name</th><th>Hold Reason</th><th style={{ textAlign: 'right' }}>Date Paused</th></tr></thead>
               <tbody>
                 {data.holdTasks?.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Hold Reason"><span className="status-pill pill-amber">{task.reason}</span></td>
                     <td data-label="Date Paused" className="cell-muted" style={{ textAlign: 'right' }}>{new Date(task.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
@@ -1136,7 +1138,7 @@ const MemberReportPage = ({ activeProject }) => {
                 <thead><tr><th>Task Name</th><th>Project</th><th>Assigned To</th><th style={{ textAlign: 'right' }}>Status</th></tr></thead>
                 <tbody>
                   {data.delegatedTasks?.map(task => (
-                    <tr key={task.id}>
+                    <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                       <td data-label="Task Name" className="cell-bold">{task.name}</td>
                       <td data-label="Project" className="cell-muted">{task.project}</td>
                       <td data-label="Assigned To" className="cell-accent">{task.assignee}</td>
@@ -1167,7 +1169,7 @@ const MemberReportPage = ({ activeProject }) => {
               <thead><tr><th>Task Name</th><th>Task Start Date</th><th>Task End Date</th><th>Completion Date</th><th style={{ textAlign: 'right' }}>Total Worked Time</th></tr></thead>
               <tbody>
                 {data.historyTasks?.map(task => (
-                  <tr key={task.id}>
+                  <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">{task.name}</td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
                       {task.createdAt ? new Date(task.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
@@ -1187,10 +1189,21 @@ const MemberReportPage = ({ activeProject }) => {
           </div>
         </div>
       </div>
+      {selectedTask && (
+        <TaskModal 
+          taskId={selectedTask.id} 
+          projectId={selectedTask.projectId || activeProject?.id} 
+          onClose={() => {
+            setSelectedTask(null);
+            setRefreshKey(prev => prev + 1);
+          }} 
+        />
+      )}
       </div>
     </div>
   );
 };
 
 export default MemberReportPage;
+
 

@@ -3,6 +3,7 @@ import * as StandardXLSX from 'xlsx';
 import api from '../api/axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import TaskModal from '../components/TaskModal';
 
 const XLSX = window.XLSX || StandardXLSX;
 
@@ -371,6 +372,7 @@ const ReportsPage = ({ activeProject }) => {
   const [searchParams] = useSearchParams();
   const leaderId = searchParams.get('leaderId');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const handleToggleTask = async (taskId, currentStatus) => {
     try {
@@ -852,7 +854,7 @@ const ReportsPage = ({ activeProject }) => {
                   }
 
                   return (
-                    <tr key={task.rowKey} style={{ background: task.isLog ? '#fafbff' : '#ffffff' }}>
+                    <tr key={task.rowKey} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId || task.project?.id || activeProject?.id })} style={{ background: task.isLog ? '#fafbff' : '#ffffff', cursor: 'pointer' }} className="hoverable-row">
                       <td data-label="Task" className="cell-bold">
                         <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{task.taskKey}</span>
                         {task.title}
@@ -963,7 +965,7 @@ const ReportsPage = ({ activeProject }) => {
               </thead>
               <tbody>
                 {overdue.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
@@ -1015,7 +1017,7 @@ const ReportsPage = ({ activeProject }) => {
               </thead>
               <tbody>
                 {completedTasks.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
@@ -1071,7 +1073,7 @@ const ReportsPage = ({ activeProject }) => {
               </thead>
               <tbody>
                 {daily.stuck.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
@@ -1121,7 +1123,7 @@ const ReportsPage = ({ activeProject }) => {
               </thead>
               <tbody>
                 {daily.hold?.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
@@ -1283,7 +1285,7 @@ const ReportsPage = ({ activeProject }) => {
               </thead>
               <tbody>
                 {historyTasks.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
                       {t.title}
@@ -1318,6 +1320,17 @@ const ReportsPage = ({ activeProject }) => {
             </table>
           </div>
         </div>
+        {selectedTask && (
+          <TaskModal 
+            taskId={selectedTask.id} 
+            projectId={selectedTask.projectId || activeProject?.id} 
+            onClose={() => {
+              setSelectedTask(null);
+              // Optionally trigger a refresh to get the latest data
+              setRefreshKey(prev => prev + 1);
+            }} 
+          />
+        )}
       </div>
     </div>
   );

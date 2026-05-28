@@ -889,6 +889,32 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                 }}>My Report</span>
               </Link>
             )}
+            
+            {user?.globalRole === 'MEMBER' && (
+              <Link 
+                to="/global-report" 
+                className={`sidebar-nav-link ${currentPath === '/global-report' ? 'active' : ''}`}
+                onClick={handleNavClick}
+                style={{
+                  justifyContent: isOpen ? 'flex-start' : 'center',
+                  padding: isOpen ? '6px 10px 6px 16px' : '10px 0',
+                  gap: isOpen ? '8px' : '0px'
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85, flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span style={{ 
+                  opacity: isOpen ? 1 : 0, 
+                  maxWidth: isOpen ? '150px' : '0px',
+                  transition: 'opacity 0.2s ease, max-width 0.25s cubic-bezier(0.25, 1, 0.5, 1)',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap'
+                }}>My Overall Report</span>
+              </Link>
+            )}
             <Link 
               to="/activity" 
               className={`sidebar-nav-link ${currentPath === '/activity' ? 'active' : ''}`}
