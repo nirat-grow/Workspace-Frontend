@@ -1290,10 +1290,6 @@ const ReportsPage = ({ activeProject }) => {
                   <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>
-                          <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
-                          {t.title}
-                        </span>
                         <button 
                           onClick={(e) => { e.stopPropagation(); setShowLogsForTask(t); }}
                           style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '50%', width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
@@ -1301,6 +1297,10 @@ const ReportsPage = ({ activeProject }) => {
                         >
                           ℹ️
                         </button>
+                        <span>
+                          <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
+                          {t.title}
+                        </span>
                       </div>
                     </td>
                     <td data-label="Assignee">

@@ -1173,7 +1173,6 @@ const MemberReportPage = ({ activeProject }) => {
                   <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task Name" className="cell-bold">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{task.name}</span>
                         <button 
                           onClick={(e) => { e.stopPropagation(); setShowLogsForTask(task); }}
                           style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '50%', width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
@@ -1181,6 +1180,7 @@ const MemberReportPage = ({ activeProject }) => {
                         >
                           ℹ️
                         </button>
+                        <span>{task.name}</span>
                       </div>
                     </td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
