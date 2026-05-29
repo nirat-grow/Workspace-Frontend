@@ -1,16 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
+const getDateRange = (filterType, customDate, customMonth) => {
+  if (filterType === 'all') return null;
+  const start = new Date(), end = new Date();
+  if (filterType === 'today') { start.setHours(0,0,0,0); end.setHours(23,59,59,999); return { startDate: start.toISOString(), endDate: end.toISOString() }; }
+  if (filterType === 'yesterday') { start.setDate(start.getDate()-1); start.setHours(0,0,0,0); end.setDate(end.getDate()-1); end.setHours(23,59,59,999); return { startDate: start.toISOString(), endDate: end.toISOString() }; }
+  if (filterType === 'week') { start.setDate(start.getDate()-7); start.setHours(0,0,0,0); end.setHours(23,59,59,999); return { startDate: start.toISOString(), endDate: end.toISOString() }; }
+  if (filterType === 'custom' && customDate) { const d = new Date(customDate); d.setHours(0,0,0,0); const dEnd = new Date(customDate); dEnd.setHours(23,59,59,999); return { startDate: d.toISOString(), endDate: dEnd.toISOString() }; }
+  if (filterType === 'month' && customMonth) { const [y,m] = customMonth.split('-').map(Number); return { startDate: new Date(y,m-1,1,0,0,0,0).toISOString(), endDate: new Date(y,m,0,23,59,59,999).toISOString() }; }
+  return null;
+};
+
 const ActivityPage = () => {
   const [activities, setActivities] = useState([]);
   const [level, setLevel] = useState('');
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState('all');
+  const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
+  const [customMonth, setCustomMonth] = useState(new Date().toISOString().split('T')[0].substring(0,7));
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/activity${level ? `?level=${level}` : ''}`);
+        const dr = getDateRange(filterType, customDate, customMonth);
+        let queryParams = [];
+        if (level) queryParams.push(`level=${level}`);
+        if (dr) {
+          queryParams.push(`startDate=${dr.startDate}`);
+          queryParams.push(`endDate=${dr.endDate}`);
+        }
+        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+        const res = await api.get(`/activity${queryString}`);
         setActivities(res.data);
         setLoading(false);
       } catch (error) {
@@ -19,7 +41,7 @@ const ActivityPage = () => {
       }
     };
     fetchActivities();
-  }, [level]);
+  }, [level, filterType, customDate, customMonth]);
 
   const getLevelBadgeStyle = (level) => {
     switch (level?.toLowerCase()) {
@@ -100,26 +122,50 @@ const ActivityPage = () => {
         </select>
       </div>
 
+      {/* Filter Bar */}
+      <div className="report-filter-bar filter-selector-bar" style={{ marginBottom: '2rem' }}>
+        <span className="filter-label">Period:</span>
+        <div className="filter-group">
+          {[{id:'all',label:'All Time'},{id:'today',label:'Today'},{id:'yesterday',label:'Yesterday'},{id:'week',label:'Last 7 Days'},{id:'custom',label:'Pick Date'},{id:'month',label:'Pick Month'}].map(opt => (
+            <button key={opt.id} onClick={() => setFilterType(opt.id)} className={`filter-btn${filterType===opt.id?' active':''}`}>{opt.label}</button>
+          ))}
+          {filterType === 'custom' && (
+            <div className="custom-date-picker slide-in">
+              <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="date-input" max={new Date().toISOString().split('T')[0]} />
+            </div>
+          )}
+          {filterType === 'month' && (
+            <div className="custom-date-picker slide-in">
+              <input type="month" value={customMonth} onChange={e => setCustomMonth(e.target.value)} className="date-input" max={new Date().toISOString().split('T')[0].substring(0,7)} />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Main timeline listing */}
       <div style={{ 
         background: '#ffffff', 
         border: '1px solid var(--border)', 
         borderRadius: '12px', 
         padding: '2rem',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+        position: 'relative',
+        minHeight: '200px'
       }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-            <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>Loading timeline logs...</p>
+        {loading && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.7)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}>
+            <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
+            <p style={{ color: 'var(--text-light)', fontSize: '0.9rem', margin: 0, fontWeight: 500 }}>Loading timeline logs...</p>
           </div>
-        ) : activities.length === 0 ? (
+        )}
+        
+        {activities.length === 0 && !loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-light)' }}>
             <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>📭</span>
             <p style={{ fontSize: '0.9rem', margin: 0, fontWeight: 500 }}>No activity events recorded yet.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', opacity: loading ? 0.4 : 1, transition: 'opacity 0.2s ease-in-out', pointerEvents: loading ? 'none' : 'auto' }}>
             {activities.map((act, index) => {
               const styles = getLevelBadgeStyle(act.level);
               return (

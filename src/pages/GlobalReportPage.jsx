@@ -440,13 +440,15 @@ const GlobalReportPage = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div style={{textAlign:'center',padding:'4rem',color:'var(--text-light)'}}>
-          <div className="report-spinner" style={{margin:'0 auto 12px'}}></div>
-          Loading global report...
-        </div>
-      ) : (
-        <>
+      <div style={{ position: 'relative', minHeight: '300px' }}>
+        {loading && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(248,250,252,0.6)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+            <div className="report-spinner" style={{margin:'0 auto 12px'}}></div>
+            <span style={{color:'var(--text-light)', fontWeight: 500}}>Loading global report...</span>
+          </div>
+        )}
+        
+        <div style={{ opacity: loading ? 0.4 : 1, transition: 'opacity 0.2s ease-in-out', pointerEvents: loading ? 'none' : 'auto' }}>
           {/* Global Summary Cards */}
           <div className="report-metrics-grid" style={{gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))'}}>
             <div className="report-metric-card accent-indigo">
@@ -811,8 +813,8 @@ const GlobalReportPage = () => {
               </div>
             )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
       {selectedTask && (
         <TaskModal 
           taskId={selectedTask.id} 
