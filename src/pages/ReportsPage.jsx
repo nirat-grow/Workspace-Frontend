@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TaskModal from '../components/TaskModal';
+import TaskLogsModal from '../components/TaskLogsModal';
 
 const XLSX = window.XLSX || StandardXLSX;
 
@@ -373,6 +374,7 @@ const ReportsPage = ({ activeProject }) => {
   const leaderId = searchParams.get('leaderId');
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showLogsForTask, setShowLogsForTask] = useState(null);
 
   const handleToggleTask = async (taskId, currentStatus) => {
     try {
@@ -650,7 +652,7 @@ const ReportsPage = ({ activeProject }) => {
       <div className="report-title-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1>
-            {leaderId ? 'Squad Performance Report' : (activeProject ? `${activeProject.name} - Reports` : 'Global Reports')}
+            {leaderId ? 'Squad Performance Report' : (activeProject ? `${activeProject.name} Report` : 'Overall Report')}
           </h1>
           {leaderId ? (
             <p>
@@ -1287,8 +1289,19 @@ const ReportsPage = ({ activeProject }) => {
                 {historyTasks.map(t => (
                   <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.projectId || t.project?.id || activeProject?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
                     <td data-label="Task" className="cell-bold">
-                      <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
-                      {t.title}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>
+                          <span style={{ color: 'var(--text-light)', marginRight: '6px', fontWeight: '500' }}>{t.taskKey}</span>
+                          {t.title}
+                        </span>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowLogsForTask(t); }}
+                          style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '50%', width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                          title="View Session Logs"
+                        >
+                          ℹ️
+                        </button>
+                      </div>
                     </td>
                     <td data-label="Assignee">
                       <span className="status-pill pill-neutral">
@@ -1330,6 +1343,9 @@ const ReportsPage = ({ activeProject }) => {
               setRefreshKey(prev => prev + 1);
             }} 
           />
+        )}
+        {showLogsForTask && (
+          <TaskLogsModal task={showLogsForTask} onClose={() => setShowLogsForTask(null)} />
         )}
       </div>
     </div>

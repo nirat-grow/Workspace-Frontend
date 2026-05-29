@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocketContext } from '../context/SocketContext';
 import api from '../api/axios';
@@ -10,6 +10,9 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
   const { user, logout, updateUser } = useAuth();
   const socket = useSocketContext();
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const currentSearch = location.search;
   const activeProjectRef = useRef(activeProject);
   const [projects, setProjects] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -239,7 +242,6 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
     }
     setShowCreate(!showCreate);
   };
-  const currentPath = window.location.pathname;
 
   return (
     <div className={`sidebar-container ${isOpen ? 'open' : 'closed'}`} style={{
@@ -563,7 +565,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                 to="/global-report" 
                 onClick={handleNavClick}
                 style={{
-                  color: currentPath === '/global-report' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  color: currentPath === '/global-report' && currentSearch !== '?personal=true' ? 'white' : 'rgba(255, 255, 255, 0.6)',
                   textDecoration: 'none',
                   display: 'flex',
                   alignItems: 'center',
@@ -571,14 +573,14 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                   gap: isOpen ? '8px' : '0px',
                   padding: isOpen ? '6px 10px 6px 16px' : '10px 0',
                   borderRadius: '6px',
-                  background: currentPath === '/global-report' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
-                  fontWeight: currentPath === '/global-report' ? '600' : '400',
+                  background: currentPath === '/global-report' && currentSearch !== '?personal=true' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+                  fontWeight: currentPath === '/global-report' && currentSearch !== '?personal=true' ? '600' : '400',
                   transition: 'all 0.15s',
                   fontSize: '0.875rem',
                   marginTop: '2px'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'white'; if (currentPath !== '/global-report') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = currentPath === '/global-report' ? 'white' : 'rgba(255, 255, 255, 0.6)'; if (currentPath !== '/global-report') e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'white'; if (currentPath !== '/global-report' || currentSearch === '?personal=true') e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = currentPath === '/global-report' && currentSearch !== '?personal=true' ? 'white' : 'rgba(255, 255, 255, 0.6)'; if (currentPath !== '/global-report' || currentSearch === '?personal=true') e.currentTarget.style.background = 'transparent'; }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85, color: '#3b82f6', flexShrink: 0 }}>
                   <line x1="18" y1="20" x2="18" y2="10" />
@@ -858,7 +860,7 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
                   transition: 'opacity 0.2s ease, max-width 0.25s cubic-bezier(0.25, 1, 0.5, 1)',
                   overflow: 'hidden',
                   whiteSpace: 'nowrap'
-                }}>Reports</span>
+                }}>{activeProject ? `${activeProject.name} Report` : 'Reports'}</span>
               </Link>
             )}
 
@@ -890,11 +892,16 @@ const Sidebar = ({ activeProject, setActiveProject, isOpen, setIsOpen }) => {
               </Link>
             )}
             
-            {user?.globalRole === 'MEMBER' && (
+            {['MEMBER', 'TEAM_LEADER'].includes(user?.globalRole) && (
               <Link 
-                to="/global-report" 
-                className={`sidebar-nav-link ${currentPath === '/global-report' ? 'active' : ''}`}
-                onClick={handleNavClick}
+                to={user?.globalRole === 'TEAM_LEADER' ? "/global-report?personal=true" : "/global-report"} 
+                className={`sidebar-nav-link ${currentPath === '/global-report' && (user?.globalRole === 'MEMBER' || currentSearch === '?personal=true') ? 'active' : ''}`}
+                onClick={(e) => {
+                  handleNavClick();
+                  if (user?.globalRole === 'TEAM_LEADER') {
+                    // Navigate to personal report manually if needed or just let Link handle it
+                  }
+                }}
                 style={{
                   justifyContent: isOpen ? 'flex-start' : 'center',
                   padding: isOpen ? '6px 10px 6px 16px' : '10px 0',

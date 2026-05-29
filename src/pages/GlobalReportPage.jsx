@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import * as StandardXLSX from 'xlsx';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import TaskModal from '../components/TaskModal';
+import TaskLogsModal from '../components/TaskLogsModal';
 
 const XLSX = window.XLSX || StandardXLSX;
 
@@ -248,11 +249,15 @@ const GlobalReportPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showLogsForTask, setShowLogsForTask] = useState(null);
+
+  const [searchParams] = useSearchParams();
+  const isPersonal = searchParams.get('personal') === 'true';
 
   useEffect(() => {
     setLoading(true);
     const dr = getDateRange(filterType, customDate, customMonth);
-    const q = `startDate=${dr.startDate}&endDate=${dr.endDate}&tzOffset=${new Date().getTimezoneOffset()}`;
+    const q = `startDate=${dr.startDate}&endDate=${dr.endDate}&tzOffset=${new Date().getTimezoneOffset()}${isPersonal ? '&personal=true' : ''}`;
     api.get(`/reports/global?${q}`)
       .then(res => { setData(res.data); setLoading(false); })
       .catch(err => { console.error(err); setLoading(false); });
@@ -276,7 +281,7 @@ const GlobalReportPage = () => {
 
   const handleDownloadReport = () => {
     if (!data) return;
-    const reportTitle = user?.globalRole === 'MEMBER' 
+    const reportTitle = isPersonal || user?.globalRole === 'MEMBER' 
       ? 'My Overall Report - All Projects'
       : `Global Report - ${user?.globalRole === 'TEAM_LEADER' ? 'Core Team' : 'All Projects'}`;
     
@@ -408,9 +413,9 @@ const GlobalReportPage = () => {
     <div className="report-page">
       {/* Header */}
       <div className="report-title-section">
-        <h1>🌐 {user?.globalRole === 'MEMBER' ? 'My Overall Report' : 'Global Report'}</h1>
+        <h1>🌐 {isPersonal || user?.globalRole === 'MEMBER' ? 'My Overall Report' : 'Global Report'}</h1>
         <p>
-          {user?.globalRole === 'MEMBER'
+          {isPersonal || user?.globalRole === 'MEMBER'
             ? 'Cross-project analytics across all your projects'
             : `Cross-project analytics across all ${user?.globalRole === 'TEAM_LEADER' ? 'your team\'s' : 'company'} projects`
           }
@@ -779,7 +784,21 @@ const GlobalReportPage = () => {
                     <tbody>
                       {data.completedTasks.map(t => (
                         <tr key={t.id} onClick={() => setSelectedTask({ id: t.id, projectId: t.project?.id })} style={{ cursor: 'pointer' }} className="hoverable-row">
-                          <td data-label="Task" className="cell-bold"><span style={{color:'var(--text-light)',marginRight:'6px',fontWeight:500}}>{t.taskKey}</span>{t.title}</td>
+                          <td data-label="Task" className="cell-bold">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>
+                                <span style={{color:'var(--text-light)',marginRight:'6px',fontWeight:500}}>{t.taskKey}</span>
+                                {t.title}
+                              </span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowLogsForTask(t); }}
+                                style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '50%', width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                                title="View Session Logs"
+                              >
+                                ℹ️
+                              </button>
+                            </div>
+                          </td>
                           <td data-label="Project" className="cell-muted">{t.project?.name}</td>
                           <td data-label="Assignee"><span className="status-pill pill-neutral">{t.assignee?`${t.assignee.name}${t.assignee.designation?` (${t.assignee.designation})`:''}` : 'Unassigned'}</span></td>
                           <td data-label="Completed" className="cell-muted">{new Date(t.updatedAt).toLocaleDateString()}</td>
@@ -803,6 +822,9 @@ const GlobalReportPage = () => {
             setRefreshKey(prev => prev + 1);
           }} 
         />
+      )}
+      {showLogsForTask && (
+        <TaskLogsModal task={showLogsForTask} onClose={() => setShowLogsForTask(null)} />
       )}
     </div>
   );

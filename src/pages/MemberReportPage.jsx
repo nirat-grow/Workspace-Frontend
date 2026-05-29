@@ -1,9 +1,10 @@
-  import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as StandardXLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { useParams } from 'react-router-dom';
 import TaskModal from '../components/TaskModal';
+import TaskLogsModal from '../components/TaskLogsModal';
 
 const XLSX = window.XLSX || StandardXLSX;
 
@@ -360,12 +361,12 @@ const LiveTimer = ({ startTime }) => {
   return <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--accent)' }}>{elapsed}</span>;
 };
 
-
 const MemberReportPage = ({ activeProject }) => {
   const { user: currentUser } = useAuth();
   const { targetUserId } = useParams();
   const [targetUser, setTargetUser] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showLogsForTask, setShowLogsForTask] = useState(null);
   const [data, setData] = useState({
     performance: { totalHours: 0, completedTasks: 0, productivity: 0 },
     dailyStatus: { pending: 0, stuck: 0, activity: [] },
@@ -1170,7 +1171,18 @@ const MemberReportPage = ({ activeProject }) => {
               <tbody>
                 {data.historyTasks?.map(task => (
                   <tr key={task.id} onClick={() => setSelectedTask({ id: task.id, projectId: task.projectId })} style={{ cursor: 'pointer' }} className="hoverable-row">
-                    <td data-label="Task Name" className="cell-bold">{task.name}</td>
+                    <td data-label="Task Name" className="cell-bold">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{task.name}</span>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowLogsForTask(task); }}
+                          style={{ background: '#e0e7ff', border: '1px solid #c7d2fe', borderRadius: '50%', width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                          title="View Session Logs"
+                        >
+                          ℹ️
+                        </button>
+                      </div>
+                    </td>
                     <td data-label="Task Start Date" className="cell-muted" style={{ fontSize: '0.8rem' }}>
                       {task.createdAt ? new Date(task.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </td>
@@ -1198,6 +1210,9 @@ const MemberReportPage = ({ activeProject }) => {
             setRefreshKey(prev => prev + 1);
           }} 
         />
+      )}
+      {showLogsForTask && (
+        <TaskLogsModal task={showLogsForTask} onClose={() => setShowLogsForTask(null)} />
       )}
       </div>
     </div>
